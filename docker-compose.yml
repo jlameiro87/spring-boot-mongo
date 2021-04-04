@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    hostname: mongo
+    restart: unless-stopped
+    ports:
+      - $MONGO_HOST_PORT:27017
+    environment:
+      - MONGO_INITDB_DATABASE=bookstore
+    volumes:
+      - $MONGO_DATA_HOST_PATH:/data/db/
+      - $MONGO_LOG_HOST_PATH:/var/log/mongodb/
+      - $MONGO_INITDB_SCRIPTS_HOST_PATH:/docker-entrypoint-initdb.d/
+    networks:
+      - main-network
+    command: ["--bind_ip", "0.0.0.0"]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sprint-boot-mongo
+    container_name: sprint-boot-mongo
+    restart: on-failure
+    depends_on:
+      - mongo
+    ports:
+      - $SERVER_HOST_PORT:8000
+    environment:
+      - SERVER_PORT=8000
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_APPLICATION_NAME=sprint-boot-mongo
+      - SPRING_DATA_MONGODB_HOST=mongo
+      - SPRING_DATA_MONGODB_PORT=27017
+      - SPRING_DATA_MONGODB_DATABASE=bookstore
+    networks:
+      - main-network
+
+networks:
+  main-network:
+    external:
+      name: $NETWORK_NAME
